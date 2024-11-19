@@ -7,7 +7,7 @@ import (
 )
 
 // Returning of error types(or any RESP types) should happen at server level, not during de-serialization
-func deserializeMessage(respArr string) string {
+func (s *Serializer) deserializeMessage(respArr string) string {
     if string(respArr[0]) != "*" {
 		log.Fatal("Message is not a RESP array")
 	}
