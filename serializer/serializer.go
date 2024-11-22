@@ -20,11 +20,11 @@ type Serializer struct {
 
 }
 
-func (s *Serializer) serializeSimpleString(msg string) string {
+func (s *Serializer) SerializeSimpleString(msg string) string {
 	return "+" + msg + CRLF
 }
 
-func (s *Serializer) serializeSimpleError(prefix string, msg string) string {
+func (s *Serializer) SerializeSimpleError(prefix string, msg string) string {
 	p := strings.ToUpper(prefix)
 	err := "-" + p + " " + msg + CRLF
 	return err
@@ -32,7 +32,7 @@ func (s *Serializer) serializeSimpleError(prefix string, msg string) string {
 
 // v: integer value
 // isPos: (true for +, false for -)
-func (s *Serializer) serializeInteger(v int, isPos bool) string {
+func (s *Serializer) SerializeInteger(v int, isPos bool) string {
 	if isPos {
 		return ":" + fmt.Sprint(v) + CRLF
 	} else {
@@ -40,12 +40,12 @@ func (s *Serializer) serializeInteger(v int, isPos bool) string {
 	}
 }
 
-func (s *Serializer) serializeBulkString(msg string) string {
+func (s *Serializer) SerializeBulkString(msg string) string {
 	l := len(msg)
 	return "$" + fmt.Sprint(l) + CRLF + msg + CRLF
 }
 
-func (s *Serializer) serializeBool(b bool) string {
+func (s *Serializer) SerializeBool(b bool) string {
 	if b {
 		return "#" + "t" + CRLF
 	} else {
@@ -53,7 +53,7 @@ func (s *Serializer) serializeBool(b bool) string {
 	}
 }
 
-func (s *Serializer) serializeDouble(params doubleOpts) string {
+func (s *Serializer) SerializeDouble(params doubleOpts) string {
 	respDouble := ","
 	if params.isNegative {
 		respDouble += "-" + fmt.Sprint(params.integer)
@@ -72,7 +72,7 @@ func (s *Serializer) serializeDouble(params doubleOpts) string {
 	return respDouble
 }
 
-func (s *Serializer) serializeBigNumber(bigNum string, isNegative bool) string {
+func (s *Serializer) SerializeBigNumber(bigNum string, isNegative bool) string {
 	if isNegative {
 		return "(" + "-" + bigNum + CRLF
 	} else {
@@ -80,16 +80,16 @@ func (s *Serializer) serializeBigNumber(bigNum string, isNegative bool) string {
 	}
 }
 
-func (s *Serializer) serializeBulkError(e string) string {
+func (s *Serializer) SerializeBulkError(e string) string {
 	l := len(e)
 	return "!" + fmt.Sprint(l) + CRLF + e + CRLF
 }
 
-func (s *Serializer) null() string {
+func (s *Serializer) Null() string {
 	return "_" + CRLF
 }
 
-func (s *Serializer) nullBulkString() string {
+func (s *Serializer) NullBulkString() string {
 	return "$-1\r\n"
 }
 
