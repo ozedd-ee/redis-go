@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 
+	"github.com/ozedd-ee/redis-go/commands"
 	"github.com/ozedd-ee/redis-go/serializer"
 )
 
@@ -64,5 +65,6 @@ func processMessage(message string) string {
 	s := serializer.Serializer{}
 
 	cmdString := s.DeserializeMessage(message)
-	
+	res := commands.HandleCommand(cmdString, &s)
+    return res
 }
