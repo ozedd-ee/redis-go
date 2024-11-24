@@ -93,7 +93,7 @@ func (s *Serializer) NullBulkString() string {
 	return "$-1\r\n"
 }
 
-func (s *Serializer) serializeArray(elements ...string) string {
+func (s *Serializer) SerializeArray(elements ...string) string {
 	respArray := "*"
 	arrLength := len(elements)
 	respArray += fmt.Sprint(arrLength) + CRLF
