@@ -31,15 +31,13 @@ func (s *Serializer) DeserializeMessage(respArr string) string {
         }
 
 		for _, v := range bulkStringArr {
-            // extract length and remove starting CRLF
-            _, noPrefixV, _ := strings.Cut(v, "\r\n")
-            // remove ending CRLF
-            noSuffixV, s2 := strings.CutSuffix(noPrefixV, "\r\n")
-            if !s2 {
-                log.Fatal("No closing CRLF for bulk string")
+            // Remove length and following CRLF
+            _, noPrefixV, success := strings.Cut(v, "\r\n")
+			if !success {
+                log.Fatal("No opening CRLF for bulk string")
             }
-            // append cleaned string without CRLF to array
-            plainCmdArr = append(plainCmdArr, noSuffixV)
+            // append cleaned string to array (Retain closing CRLF as separator)
+            plainCmdArr = append(plainCmdArr, noPrefixV)
 		}
 	}
     return strings.Join(plainCmdArr, "")
