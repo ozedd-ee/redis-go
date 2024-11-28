@@ -25,6 +25,7 @@ func Start(port string) {
 			fmt.Println("Error accepting connection", err)
 			continue
 		}
+        fmt.Println("Connection Established")
 		// Handle connection in separate go routine to allow server to serve multiple clients concurrently
 		go handleConnection(conn)
 	}
@@ -33,11 +34,10 @@ func Start(port string) {
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
 
-	reader := bufio.NewReader(conn)
-	var message []byte
-	buffer := make([]byte, 1024000) // 1 MB buffer
-
 	for {
+        reader := bufio.NewReader(conn)
+        var message []byte
+        buffer := make([]byte, 1024000) // 1 MB buffer
 		// Use buffer to read entire message
 		n, err := reader.Read(buffer)
 		if err != nil {
@@ -49,14 +49,14 @@ func handleConnection(conn net.Conn) {
 			return
 		}
 		// Append read data to message
-		message = append(message, buffer[:n]...)
-	}
-
-	// Process the message and respond
-	response := processMessage(string(message))
-	_, err := conn.Write([]byte(response))
-	if err != nil {
-		fmt.Println("Error writing response:", err)
+		message = append(message, buffer[:n]...)  
+        
+        // Process message and respond
+        response := processMessage(string(message))
+        _, writerErr := conn.Write([]byte(response))
+        if writerErr != nil {
+            fmt.Println("Error writing response:", err)
+        }
 	}
 }
 
