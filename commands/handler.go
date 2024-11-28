@@ -9,7 +9,7 @@ import (
 func HandleCommand(c string, s *serializer.Serializer) string {
 	// split command string into array of the command and its options using CRLF separator retained during deserialization
 	cmdArr := strings.Split(c, "\r\n")
-	cmd := cmdArr[0]
+	cmd := strings.ToUpper(cmdArr[0])
 
 	switch cmd {
 	case "PING":
@@ -31,6 +31,8 @@ func HandleCommand(c string, s *serializer.Serializer) string {
 			return s.SerializeSimpleError("err", "No key specified")
 		}
 		return get(cmdArr[1])
+	case "INFO":
+		return s.SerializeBulkString("# Server \r\n redis_version:any \r\n tcp_port:6379")
 	default:
 		return s.SerializeSimpleError("err", "Invalid command")
 	}
