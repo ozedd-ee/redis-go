@@ -4,7 +4,7 @@ import "github.com/ozedd-ee/redis-go/serializer"
 
 var s = serializer.Serializer{}
 
-var store map[string]string
+var store =  make(map[string]string)
 
 func ping() string {
 	return s.SerializeSimpleString("PONG")
