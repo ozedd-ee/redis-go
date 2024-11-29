@@ -64,7 +64,10 @@ func processMessage(message string) string {
 	// Initialize serializer
 	s := serializer.Serializer{}
 
-	cmdString := s.DeserializeMessage(message)
+	cmdString, err := s.DeserializeMessage(message)
+    if err != nil {
+        return s.SerializeSimpleError("err", err.Error())
+    }
 	res := commands.HandleCommand(cmdString, &s)
     return res
 }

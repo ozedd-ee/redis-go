@@ -1,14 +1,14 @@
 package serializer
 
 import (
-	"log"
+	"errors"
 	"strconv"
 	"strings"
 )
 
-func (s *Serializer) DeserializeMessage(respArr string) string {
+func (s *Serializer) DeserializeMessage(respArr string) (string, error) {
 	if string(respArr[0]) != "*" {
-		log.Fatal("Message is not a RESP array")
+		return "", errors.New("message is not a RESP array")
 	}
 	respArr = respArr[1:]
 	// Split at first CRLF to separate array length from elements
@@ -19,7 +19,7 @@ func (s *Serializer) DeserializeMessage(respArr string) string {
 		// Try converting length to integer
 		_, err := strconv.Atoi(string(arrLengthString))
 		if err != nil {
-			log.Fatal("Array length not specified")
+			return "", errors.New("array length not specified")
 		}
 
 		// Split RESP array of bulk strings into Go array of RESP bulk strings (without the identifiers)
@@ -30,11 +30,11 @@ func (s *Serializer) DeserializeMessage(respArr string) string {
 			// Remove length and following CRLF
 			_, noPrefixV, success := strings.Cut(v, "\r\n")
 			if !success {
-				log.Fatal("No opening CRLF for bulk string")
+				return "", errors.New("no opening CRLF for bulk string")
 			}
 			// append cleaned string to array (Retain closing CRLF as separator)
 			plainCmdArr = append(plainCmdArr, noPrefixV)
 		}
 	}
-	return strings.Join(plainCmdArr, "")
+	return strings.Join(plainCmdArr, ""), nil
 }
