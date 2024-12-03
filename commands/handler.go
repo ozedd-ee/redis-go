@@ -25,7 +25,7 @@ func HandleCommand(c string, s *serializer.Serializer) string {
 			return s.SerializeSimpleError("err", "No value specified for key")
 		}
 		key, val := cmdArr[1], cmdArr[2]
-		return set(key, val)
+		return set(key, val, cmdArr[2:]...)
 	case "GET":
 		if len(cmdArr) < 2 {
 			return s.SerializeSimpleError("err", "No key specified")
