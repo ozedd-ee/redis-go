@@ -45,7 +45,7 @@ func set(key string, val string, opts ...string) string {
 func get(key string) string {
 	val, ok := store[key]
 	if !ok {
-		return s.Null()
+		return s.NullBulkString()
 	}
 	return s.SerializeBulkString(val.value)
 }
