@@ -1,12 +1,15 @@
 package commands
 
-import "strconv"
+import (
+	"strconv"
+	"time"
+)
 
 type ExpiryOption int
 
 type Expiry struct {
 	option ExpiryOption
-	time   uint
+	time   time.Time
 }
 
 type Value struct {
@@ -37,12 +40,20 @@ func (e ExpiryOption) String() string {
 	}
 }
 
+func (v  Value) isExpired() bool {
+	if v.expiry.time.IsZero() {
+		return false
+	}
+	return time.Now().After(v.expiry.time)
+}
+// current state supports only EX option. Add support for others
 func handleSet(key string, val string, e ExpiryOption, t string) string {
-	time, err := strconv.Atoi(t)
+	tm, err := strconv.Atoi(t)
+	expiryTime := time.Now().Add(time.Second * time.Duration(tm)) 
 	if err != nil {
 		return s.SerializeSimpleError("err", "Expiry time  not specified")
 	}
-	exp := Expiry{option: e, time: uint(time)}
+	exp := Expiry{option: e, time: expiryTime}
 	value := Value{expiry: exp, value: val}
 	store[key] = value
 	return s.SerializeSimpleString("OK")

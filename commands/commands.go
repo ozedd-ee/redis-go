@@ -2,6 +2,7 @@ package commands
 
 import (
 	"strings"
+	"time"
 
 	"github.com/ozedd-ee/redis-go/serializer"
 )
@@ -20,7 +21,8 @@ func echo(msg string) string {
 
 func set(key string, val string, opts ...string) string {
 	if len(opts) == 0 {
-		exp := Expiry{option: NONE, time: 0}
+		var t time.Time
+		exp := Expiry{option: NONE, time: t}
 		value := Value{expiry: exp, value: val}
 		store[key] = value
 		return s.SerializeSimpleString("OK")
@@ -45,6 +47,10 @@ func set(key string, val string, opts ...string) string {
 func get(key string) string {
 	val, ok := store[key]
 	if !ok {
+		return s.NullBulkString()
+	}
+	if val.isExpired() {
+		delete(store, key)
 		return s.NullBulkString()
 	}
 	return s.SerializeBulkString(val.value)
