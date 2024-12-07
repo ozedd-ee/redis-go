@@ -46,13 +46,25 @@ func (v  Value) isExpired() bool {
 	}
 	return time.Now().After(v.expiry.time)
 }
-// current state supports only EX option. Add support for others
-func handleSet(key string, val string, e ExpiryOption, t string) string {
+
+func handleSetWithExpiry(key string, val string, e ExpiryOption, t string) string {
 	tm, err := strconv.Atoi(t)
-	expiryTime := time.Now().Add(time.Second * time.Duration(tm)) 
 	if err != nil {
 		return s.SerializeSimpleError("err", "Expiry time  not specified")
 	}
+
+	var expiryTime time.Time
+	switch e {
+	case EX:
+		expiryTime = time.Now().Add(time.Second * time.Duration(tm)) 
+	case PX:
+		expiryTime = time.Now().Add(time.Millisecond * time.Duration(tm))
+	case EXAT:
+		expiryTime = time.Unix(int64(tm), 0) 
+	case PXAT:
+		expiryTime = time.UnixMilli(int64(tm))
+	}
+
 	exp := Expiry{option: e, time: expiryTime}
 	value := Value{expiry: exp, value: val}
 	store[key] = value

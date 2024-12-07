@@ -31,19 +31,18 @@ func set(key string, val string, opts ...string) string {
 		V := strings.ToUpper(v)
 		switch V {
 		case "EX":
-			return handleSet(key, val, EX, opts[i+1])
+			return handleSetWithExpiry(key, val, EX, opts[i+1])
 		case "PX":
-			return handleSet(key, val, PX, opts[i+1])
+			return handleSetWithExpiry(key, val, PX, opts[i+1])
 		case "EXAT":
-			return handleSet(key, val, EXAT, opts[i+1])
+			return handleSetWithExpiry(key, val, EXAT, opts[i+1])
 		case "PXAT":
-			return handleSet(key, val, PXAT, opts[i+1])
+			return handleSetWithExpiry(key, val, PXAT, opts[i+1])
 		}
 	}
 	return s.SerializeSimpleError("err", "Invalid Expiry option specified")
 }
 
-// TODO: Update GET, Work on Expire func, CheckExpiry
 func get(key string) string {
 	val, ok := store[key]
 	if !ok {
