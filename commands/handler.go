@@ -37,8 +37,27 @@ func HandleCommand(c string, s *serializer.Serializer) string {
 		return get(cmdArr[1])
 	case "INFO":
 		return s.SerializeBulkString("# Server \r\n redis_version: 5 \r\n tcp_port:6379")
+	case "EXISTS":
+		if len(cmdArr) < 2 {
+			return s.SerializeSimpleError("err", "No key specified")
+		}
+		return exists(cmdArr[1:]...)
+	case "DEL":
+		if len(cmdArr) < 2 {
+			return s.SerializeSimpleError("err", "No key specified")
+		}
+		return deleteKey(cmdArr[1:]...)
+	case "INCR":
+		if len(cmdArr) < 2 {
+			return s.SerializeSimpleError("err", "No key specified")
+		}
+		return increment(cmdArr[1])
+	case "DECR":
+		if len(cmdArr) < 2 {
+			return s.SerializeSimpleError("err", "No key specified")
+		}
+		return decrement(cmdArr[1])
 	default:
 		return s.SerializeSimpleError("err", "Invalid command")
 	}
-
 }

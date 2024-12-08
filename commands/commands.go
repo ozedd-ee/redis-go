@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"strconv"
 	"strings"
 	"time"
 
@@ -53,4 +54,61 @@ func get(key string) string {
 		return s.NullBulkString()
 	}
 	return s.SerializeBulkString(val.value)
+}
+
+func exists(keys ...string) string {
+	var counter int
+	for _, k := range keys {
+		_, ok := store[k]
+		if ok {
+			counter++
+		}
+	}
+	return s.SerializeInteger(counter, true)
+}
+
+func deleteKey(keys ...string) string {
+	var counter int
+	for _, k:= range keys {
+		v, ok := store[k]
+		if ok {
+			delete(store, v.value)
+			counter++
+		}
+	}
+	return s.SerializeInteger(counter, true)
+}
+
+func increment(key string) string {
+	v, ok := store[key]
+	// if key does not exist, set key to 0 and increment
+	if !ok {
+		set(key,"1")
+		return s.SerializeInteger(1, true)
+	}
+	i , err := strconv.Atoi(v.value)
+	if err != nil {
+		return s.SerializeSimpleError("err", "value is not an integer or out of range")
+	}
+	i++
+	v.value = strconv.Itoa(i)
+	store[key] = v
+	return s.SerializeInteger(i, true)
+}
+
+func decrement(key string) string {
+	v, ok := store[key]
+	// if key does not exist, set key to 0 and increment
+	if !ok {
+		set(key,"-1")
+		return s.SerializeInteger(1, false)
+	}
+	i , err := strconv.Atoi(v.value)
+	if err != nil {
+		return s.SerializeSimpleError("err", "value is not an integer or out of range")
+	}
+	i--
+	v.value = strconv.Itoa(i)
+	store[key] = v
+	return s.SerializeInteger(i, false)
 }
