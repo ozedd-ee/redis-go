@@ -98,7 +98,7 @@ func (s *Serializer) SerializeArray(elements ...string) string {
 	arrLength := len(elements)
 	respArray += fmt.Sprint(arrLength) + CRLF
 	for _, v := range elements {
-		respArray += v
+		respArray += s.SerializeBulkString(v)
 	}
 	return respArray
 }
