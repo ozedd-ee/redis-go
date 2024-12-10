@@ -14,7 +14,7 @@ type Expiry struct {
 
 type Value struct {
 	expiry Expiry
-	value  string
+	value  any
 }
 
 const (
@@ -69,4 +69,10 @@ func handleSetWithExpiry(key string, val string, e ExpiryOption, t string) strin
 	value := Value{expiry: exp, value: val}
 	store[key] = value
 	return s.SerializeSimpleString("OK")
+}
+
+func reverse(slice []string) {
+	for i, j := 0, len(slice)-1; i < j; i, j = i+1, j-1 {
+		slice[i], slice[j] = slice[j], slice[i]
+	}
 }

@@ -57,6 +57,24 @@ func HandleCommand(c string, s *serializer.Serializer) string {
 			return s.SerializeSimpleError("err", "No key specified")
 		}
 		return decrement(cmdArr[1])
+	case "LPUSH":
+		if len(cmdArr) < 2 {
+			return s.SerializeSimpleError("err", "No key specified")
+		}
+		return lpush(cmdArr[1], cmdArr[2:]...)
+	case "RPUSH":
+		if len(cmdArr) < 2 {
+			return s.SerializeSimpleError("err", "No key specified")
+		}
+		return rpush(cmdArr[1], cmdArr[2:]...)
+	case "LRANGE":
+		if len(cmdArr) < 2 {
+			return s.SerializeSimpleError("err", "No key specified")
+		}
+		if len(cmdArr) < 4 {
+			return s.SerializeSimpleError("err", "No value specified for start and stop indices")
+		}
+		return lrange(cmdArr[1], cmdArr[2], cmdArr[3])
 	default:
 		return s.SerializeSimpleError("err", "Invalid command")
 	}
