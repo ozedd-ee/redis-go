@@ -110,7 +110,7 @@ func increment(key string) string {
 
 func decrement(key string) string {
 	v, ok := store[key]
-	// if key does not exist, set key to 0 and increment
+	// if key does not exist, set key to 0 and decrement
 	if !ok {
 		set(key,"-1")
 		return s.SerializeInteger(1, false)
