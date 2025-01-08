@@ -1,14 +1,14 @@
 # redis-go
 A lite version of the Redis server written in Go with support for commands from the first version of Redis.
 
-### If you have Go installed and set up:
+## If you have Go installed and set up:
 
 Run: 
 ```bash
 go install
 ```
 
-Usage:
+### Usage:
 
 Start the server and listen for client connections:
 ```bash 
@@ -31,17 +31,22 @@ rdcli
 Pass commands through the CLI client and get responses.
 
 
-## Available commands
+### Available commands
 PING, ECHO, INFO, SET GET, EXISTS, DEL, INCR, DECR, LPUSH, RPUSH, LRANGE
 
 ### Available expiry options
 EX, EXAT, PX, PXAT
 
-## If you don't have Go installed:
+## If you don't have Go installed, just use Docker:
 
-Usage:
+Build Docker image:
 ```bash
-redis-go.exe 
+docker build --tag redis-go . 
 ```
+Run image in a container:
+```bash
+docker run -p 6379:6379 redis-go 
+```
+The server should be up and running.
 
-Follow every other step listed above
+Next, Install the redis client using the guide above and follow the subsequent steps.
