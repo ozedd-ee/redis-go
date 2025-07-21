@@ -1,3 +1,3 @@
-module github.com/ozedd-ee/redis-go
+module redis-go
 
 go 1.21

@@ -3,7 +3,7 @@ package commands
 import (
 	"strings"
 
-	"github.com/ozedd-ee/redis-go/serializer"
+	"redis-go/serializer"
 )
 
 func HandleCommand(c string, s *serializer.Serializer) string {

@@ -7,8 +7,8 @@ import (
 	"log"
 	"net"
 
-	"github.com/ozedd-ee/redis-go/commands"
-	"github.com/ozedd-ee/redis-go/serializer"
+	"redis-go/commands"
+	"redis-go/serializer"
 )
 
 func Start(port string) {

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ozedd-ee/redis-go/serializer"
+	"redis-go/serializer"
 )
 
 var s = serializer.Serializer{}
