@@ -2,13 +2,14 @@ package serializer
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
 const CRLF = "\r\n"
 
 type doubleOpts struct {
-	isNegative     bool // true for +, false for -
+	isNegative     bool // true for -, false for +
 	integer        int
 	fraction       int
 	hasPosExponent bool
@@ -17,7 +18,6 @@ type doubleOpts struct {
 }
 
 type Serializer struct {
-
 }
 
 func (s *Serializer) SerializeSimpleString(msg string) string {
@@ -56,18 +56,17 @@ func (s *Serializer) SerializeBool(b bool) string {
 func (s *Serializer) SerializeDouble(params doubleOpts) string {
 	respDouble := ","
 	if params.isNegative {
-		respDouble += "-" + fmt.Sprint(params.integer)
+		respDouble += "-" + strconv.Itoa(params.integer)
 	} else {
-		respDouble += fmt.Sprint(params.integer)
+		respDouble += strconv.Itoa(params.integer)
 	}
 	if params.fraction != 0 {
-		respDouble += "." + fmt.Sprint(params.fraction)
+		respDouble += "." + strconv.Itoa(params.fraction)
 	}
 	if params.hasPosExponent {
-		respDouble += "e" + fmt.Sprint(params.exponent)
-	}
-	if params.hasNegExponent {
-		respDouble += "e" + "-" + fmt.Sprint(params.exponent)
+		respDouble += "e" + strconv.Itoa(params.exponent)
+	} else if params.hasNegExponent {
+		respDouble += "e" + "-" + strconv.Itoa(params.exponent)
 	}
 	return respDouble
 }
@@ -94,11 +93,13 @@ func (s *Serializer) NullBulkString() string {
 }
 
 func (s *Serializer) SerializeArray(elements ...string) string {
-	respArray := "*"
-	arrLength := len(elements)
-	respArray += fmt.Sprint(arrLength) + CRLF
+	var b strings.Builder
+	b.WriteString("*")
+	b.WriteString(strconv.Itoa(len(elements)))
+	b.WriteString(CRLF)
+
 	for _, v := range elements {
-		respArray += s.SerializeBulkString(v)
+		b.WriteString(s.SerializeBulkString(v))
 	}
-	return respArray
+	return b.String()
 }
