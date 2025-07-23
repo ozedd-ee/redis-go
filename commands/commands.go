@@ -53,12 +53,11 @@ func get(key string) string {
 		delete(store, key)
 		return s.NullBulkString()
 	}
-	switch val.value.(type) {
-	case string:
-		return s.SerializeBulkString(val.value.(string))
-	default:
+	str, ok := val.value.(string)
+	if !ok {
 		return s.SerializeSimpleError("err", "type stored at key is not a string")
 	}
+	return s.SerializeBulkString(str)
 }
 
 func exists(keys ...string) string {
@@ -146,9 +145,7 @@ func lpush(key string, elements ...string) string {
 	if !ok {
 		return s.SerializeSimpleError("err", "value stored at key is not a list")
 	}
-	var val []string
-	val = append(val, elements...)
-	val = append(val, initial...)
+	val := append(elements, initial...)
 	v.value = val
 	store[key] = v
 	return s.SerializeInteger(len(v.value.([]string)), true)

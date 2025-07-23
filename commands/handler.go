@@ -6,76 +6,112 @@ import (
 	"redis-go/serializer"
 )
 
-func HandleCommand(c string, s *serializer.Serializer) string {
-	// split command string into array of the command and its options using CRLF separator retained during deserialization
-	cmdArr := strings.Split(c, "\r\n")
-	cmdArr = cmdArr[:len(cmdArr)-1]
-	cmd := strings.ToUpper(cmdArr[0])
+var commandHandlers = map[string]func([]string, *serializer.Serializer) string{
+	"ping":   handlePing,
+	"echo":   handleEcho,
+	"set":    handleSet,
+	"get":    handleGet,
+	"info":   handleInfo,
+	"exists": handleExists,
+	"del":    handleDel,
+	"incr":   handleIncr,
+	"decr":   handleDecr,
+	"lpush":  handleLpush,
+	"rpush":  handleRpush,
+	"lrange": handleLrange,
+}
 
-	switch cmd {
-	case "PING":
-		return ping()
-	case "ECHO":
-		if len(cmdArr) < 2 {
-			return s.SerializeSimpleError("err", "No message to ECHO")
-		}
-		msg := cmdArr[1]
-		return echo(msg)
-	case "SET":
-		if len(cmdArr) < 2 {
-			return s.SerializeSimpleError("err", "No key and value specified")
-		}
-		if len(cmdArr) < 3 {
-			return s.SerializeSimpleError("err", "No value specified for key")
-		}
-		key, val := cmdArr[1], cmdArr[2]
-		return set(key, val, cmdArr[3:]...)
-	case "GET":
-		if len(cmdArr) < 2 {
-			return s.SerializeSimpleError("err", "No key specified")
-		}
-		return get(cmdArr[1])
-	case "INFO":
-		return s.SerializeBulkString("# Server \r\n redis_version: 5 \r\n tcp_port:6379")
-	case "EXISTS":
-		if len(cmdArr) < 2 {
-			return s.SerializeSimpleError("err", "No key specified")
-		}
-		return exists(cmdArr[1:]...)
-	case "DEL":
-		if len(cmdArr) < 2 {
-			return s.SerializeSimpleError("err", "No key specified")
-		}
-		return deleteKey(cmdArr[1:]...)
-	case "INCR":
-		if len(cmdArr) < 2 {
-			return s.SerializeSimpleError("err", "No key specified")
-		}
-		return increment(cmdArr[1])
-	case "DECR":
-		if len(cmdArr) < 2 {
-			return s.SerializeSimpleError("err", "No key specified")
-		}
-		return decrement(cmdArr[1])
-	case "LPUSH":
-		if len(cmdArr) < 2 {
-			return s.SerializeSimpleError("err", "No key specified")
-		}
-		return lpush(cmdArr[1], cmdArr[2:]...)
-	case "RPUSH":
-		if len(cmdArr) < 2 {
-			return s.SerializeSimpleError("err", "No key specified")
-		}
-		return rpush(cmdArr[1], cmdArr[2:]...)
-	case "LRANGE":
-		if len(cmdArr) < 2 {
-			return s.SerializeSimpleError("err", "No key specified")
-		}
-		if len(cmdArr) < 4 {
-			return s.SerializeSimpleError("err", "No value specified for start and stop indices")
-		}
-		return lrange(cmdArr[1], cmdArr[2], cmdArr[3])
-	default:
-		return s.SerializeSimpleError("err", "Invalid command")
+func HandleCommand(c string, s *serializer.Serializer) string {
+	cmdArr := strings.Split(c, " ")
+	if len(cmdArr) > 0 && cmdArr[len(cmdArr)-1] == "" {
+		cmdArr = cmdArr[:len(cmdArr)-1]
 	}
+	if len(cmdArr) == 0 {
+		return s.SerializeSimpleError("err", "empty command")
+	}
+
+	cmd := strings.ToLower(cmdArr[0])
+	handler, ok := commandHandlers[cmd]
+	if !ok {
+		return s.SerializeSimpleError("err", "invalid command")
+	}
+	return handler(cmdArr, s)
+}
+
+func handlePing(args []string, s *serializer.Serializer) string {
+	return ping()
+}
+
+func handleEcho(args []string, s *serializer.Serializer) string {
+	if len(args) < 2 {
+		return s.SerializeSimpleError("err", "No message to ECHO")
+	}
+	return echo(args[1])
+}
+
+func handleSet(args []string, s *serializer.Serializer) string {
+	if len(args) < 3 {
+		return s.SerializeSimpleError("err", "SET requires a key and value")
+	}
+	return set(args[1], args[2], args[3:]...)
+}
+
+func handleGet(args []string, s *serializer.Serializer) string {
+	if len(args) < 2 {
+		return s.SerializeSimpleError("err", "GET requires a key")
+	}
+	return get(args[1])
+}
+
+func handleInfo(args []string, s *serializer.Serializer) string {
+	return s.SerializeBulkString("# Server \r\n redis_version: 5 \r\n tcp_port:6379")
+}
+
+func handleExists(args []string, s *serializer.Serializer) string {
+	if len(args) < 2 {
+		return s.SerializeSimpleError("err", "EXISTS requires at least one key")
+	}
+	return exists(args[1:]...)
+}
+
+func handleDel(args []string, s *serializer.Serializer) string {
+	if len(args) < 2 {
+		return s.SerializeSimpleError("err", "DEL requires at least one key")
+	}
+	return deleteKey(args[1:]...)
+}
+
+func handleIncr(args []string, s *serializer.Serializer) string {
+	if len(args) < 2 {
+		return s.SerializeSimpleError("err", "INCR requires a key")
+	}
+	return increment(args[1])
+}
+
+func handleDecr(args []string, s *serializer.Serializer) string {
+	if len(args) < 2 {
+		return s.SerializeSimpleError("err", "DECR requires a key")
+	}
+	return decrement(args[1])
+}
+
+func handleLpush(args []string, s *serializer.Serializer) string {
+	if len(args) < 3 {
+		return s.SerializeSimpleError("err", "LPUSH requires a key and at least one value")
+	}
+	return lpush(args[1], args[2:]...)
+}
+
+func handleRpush(args []string, s *serializer.Serializer) string {
+	if len(args) < 3 {
+		return s.SerializeSimpleError("err", "RPUSH requires a key and at least one value")
+	}
+	return rpush(args[1], args[2:]...)
+}
+
+func handleLrange(args []string, s *serializer.Serializer) string {
+	if len(args) < 4 {
+		return s.SerializeSimpleError("err", "LRANGE requires key, start, and stop")
+	}
+	return lrange(args[1], args[2], args[3])
 }
