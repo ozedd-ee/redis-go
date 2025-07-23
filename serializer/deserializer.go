@@ -26,6 +26,7 @@ func (s *Serializer) DeserializeMessage(respArr string) (string, error) {
 	for i := 1; i < len(lines)-1; i++ {
 		if strings.HasPrefix(lines[i], "$") && i+1 < len(lines) {
 			result.WriteString(lines[i+1])
+			result.WriteString(" ") // Add space between command and arguments
 			i++ // Skip the next line as it is the bulk string content
 		}
 	}
