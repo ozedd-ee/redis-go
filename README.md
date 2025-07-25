@@ -1,52 +1,90 @@
 # redis-go
 A lite version of the Redis server written in Go with support for commands from the first version of Redis.
 
-## If you have Go installed and set up:
+## 🚀 Getting Started
 
-Run: 
+### If you have Go installed
+
+Use the provided `Makefile` for common tasks:
+
+#### 📦 Build the server
+
 ```bash
-go install
+make build
 ```
 
-### Usage:
+#### 🟢 Start the server (foreground)
 
-Start the server and listen for client connections:
-```bash 
-redis-go
+```bash
+make run
 ```
 
-Connect to the server from any Redis client of your choice:
+#### 🧪 Run unit tests
 
-You can use the following guide from Redis to  [install redis-cli without installing the server.](https://redis.io/blog/get-redis-cli-without-installing-redis-server/)
+```bash
+make test
+```
 
-Too long to read? Just run:
+#### ⚙️ Run benchmarks
+
+```bash
+make bench
+```
+
+---
+
+## 🐳 If you don’t have Go installed (use Docker)
+
+#### 📦 Build Docker image
+
+```bash
+make docker-build
+```
+
+#### 🚀 Run the server container
+
+```bash
+make docker-run
+```
+
+#### 🚫 Stop the container
+
+```bash
+make docker-stop
+```
+
+---
+
+##  Connecting via Redis CLI
+
+Use any Redis client (e.g., `redis-cli`, `rdcli`, or GUI tools like RedisInsight).
+
+### Install `redis-cli` (optional):
+
 ```bash
 npm install -g redis-cli
 ```
 
-To start the CLI client and connect to the server, make sure the server is still running, open a new terminal and run:
+### Connect to the server:
+
 ```bash
 rdcli
 ```
-Pass commands through the CLI client and get responses.
 
+Once connected, you can run any supported command.
 
-### Available commands
-PING, ECHO, INFO, SET GET, EXISTS, DEL, INCR, DECR, LPUSH, RPUSH, LRANGE
+---
 
-### Available expiry options
+## ✅ Supported Commands
+
+```
+PING, ECHO, INFO, SET, GET, EXISTS, DEL, INCR, DECR, LPUSH, RPUSH, LRANGE
+```
+
+## 🕒 Supported Expiry Options
+
+```
 EX, EXAT, PX, PXAT
-
-## If you don't have Go installed, just use Docker:
-
-Build Docker image:
-```bash
-docker build --tag redis-go . 
 ```
-Run image in a container:
-```bash
-docker run -p 6379:6379 redis-go 
-```
-The server should be up and running.
 
-Next, Install the redis client using the guide above and follow the subsequent steps.
+---
