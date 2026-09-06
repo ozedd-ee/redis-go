@@ -1,73 +1,99 @@
 package server
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"log"
 	"net"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 
 	"redis-go/commands"
 	"redis-go/serializer"
 )
 
-func Start(port string) {
-	listener, err := net.Listen("tcp", port)
+type Server struct {
+	listener net.Listener
+	wg       sync.WaitGroup
+}
+
+func New(addr string) (*Server, error) {
+	l, err := net.Listen("tcp", addr)
+	if err != nil {
+		return nil, err
+	}
+	return &Server{listener: l}, nil
+}
+
+func (srv *Server) Addr() string {
+	return srv.listener.Addr().String()
+}
+
+func (srv *Server) Serve() {
+	fmt.Println("Server listening on", srv.listener.Addr())
+	for {
+		conn, err := srv.listener.Accept()
+		if err != nil {
+			break // listener was closed
+		}
+		srv.wg.Add(1)
+		go func() {
+			defer srv.wg.Done()
+			handleConnection(conn)
+		}()
+	}
+	srv.wg.Wait()
+}
+
+func (srv *Server) Stop() {
+	srv.listener.Close()
+}
+
+// Start is the main entrypoint: listens on addr and handles OS signals for clean shutdown.
+func Start(addr string) {
+	srv, err := New(addr)
 	if err != nil {
 		log.Fatal("Error starting server:", err)
 	}
-	defer listener.Close()
-	fmt.Println("Server is listening on port", port)
 
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			fmt.Println("Error accepting connection", err)
-			continue
-		}
-        fmt.Println("Connection Established")
-		// Handle connection in separate go routine to allow server to serve multiple clients concurrently
-		go handleConnection(conn)
-	}
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-sigChan
+		fmt.Println("\nShutting down...")
+		srv.Stop()
+	}()
+
+	srv.Serve()
+	fmt.Println("Server stopped")
 }
 
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
-
+	buf := make([]byte, 4096)
 	for {
-        reader := bufio.NewReader(conn)
-        var message []byte
-        buffer := make([]byte, 1024000) // 1 MB buffer
-		// Use buffer to read entire message
-		n, err := reader.Read(buffer)
+		n, err := conn.Read(buf)
 		if err != nil {
-			if err == io.EOF {
-				// End-of-stream
-				break
+			if err != io.EOF {
+				log.Printf("read error: %v", err)
 			}
-			fmt.Println("Error reading message: ", err)
 			return
 		}
-		// Append read data to message
-		message = append(message, buffer[:n]...)  
-        
-        // Process message and respond
-        response := processMessage(string(message))
-        _, writerErr := conn.Write([]byte(response))
-        if writerErr != nil {
-            fmt.Println("Error writing response:", err)
-        }
+		response := processMessage(string(buf[:n]))
+		if _, err := conn.Write([]byte(response)); err != nil {
+			log.Printf("write error: %v", err)
+			return
+		}
 	}
 }
 
 func processMessage(message string) string {
-	// Initialize serializer
 	s := serializer.Serializer{}
-
 	cmdString, err := s.DeserializeMessage(message)
-    if err != nil {
-        return s.SerializeSimpleError("err", err.Error())
-    }
-	res := commands.HandleCommand(cmdString, &s)
-    return res
+	if err != nil {
+		return s.SerializeSimpleError("err", err.Error())
+	}
+	return commands.HandleCommand(cmdString, &s)
 }

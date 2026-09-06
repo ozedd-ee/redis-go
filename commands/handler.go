@@ -2,9 +2,12 @@ package commands
 
 import (
 	"strings"
+	"sync"
 
 	"redis-go/serializer"
 )
+
+var mu sync.Mutex
 
 var commandHandlers = map[string]func([]string, *serializer.Serializer) string{
 	"ping":   handlePing,
@@ -35,6 +38,9 @@ func HandleCommand(c string, s *serializer.Serializer) string {
 	if !ok {
 		return s.SerializeSimpleError("err", "invalid command")
 	}
+
+	mu.Lock()
+	defer mu.Unlock()
 	return handler(cmdArr, s)
 }
 

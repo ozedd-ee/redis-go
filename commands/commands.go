@@ -55,7 +55,7 @@ func get(key string) string {
 	}
 	str, ok := val.value.(string)
 	if !ok {
-		return s.SerializeSimpleError("err", "type stored at key is not a string")
+		return s.SerializeSimpleError("WRONGTYPE", "value stored at key is not a string")
 	}
 	return s.SerializeBulkString(str)
 }
@@ -63,92 +63,95 @@ func get(key string) string {
 func exists(keys ...string) string {
 	var counter int
 	for _, k := range keys {
-		_, ok := store[k]
-		if ok {
-			counter++
+		v, ok := store[k]
+		if !ok {
+			continue
 		}
+		if v.isExpired() {
+			delete(store, k)
+			continue
+		}
+		counter++
 	}
-	return s.SerializeInteger(counter, true)
+	return s.SerializeInteger(counter)
 }
 
 func deleteKey(keys ...string) string {
 	var counter int
-	for _, k:= range keys {
+	for _, k := range keys {
 		_, ok := store[k]
 		if ok {
 			delete(store, k)
 			counter++
 		}
 	}
-	return s.SerializeInteger(counter, true)
+	return s.SerializeInteger(counter)
 }
 
 func increment(key string) string {
 	v, ok := store[key]
-	// if key does not exist, set key to 0 and increment
 	if !ok {
-		set(key,"1")
-		return s.SerializeInteger(1, true)
+		set(key, "1")
+		return s.SerializeInteger(1)
 	}
 	str, ok := v.value.(string)
 	if !ok {
 		return s.SerializeSimpleError("err", "value is not an integer")
 	}
-	i , err := strconv.Atoi(str)
+	i, err := strconv.Atoi(str)
 	if err != nil {
 		return s.SerializeSimpleError("err", "value is not an integer or out of range")
 	}
 	i++
 	v.value = strconv.Itoa(i)
 	store[key] = v
-	if i < 0 {
-		return s.SerializeInteger(i, false)
-	}
-	return s.SerializeInteger(i, true)
+	return s.SerializeInteger(i)
 }
 
 func decrement(key string) string {
 	v, ok := store[key]
-	// if key does not exist, set key to 0 and decrement
 	if !ok {
-		set(key,"-1")
-		return s.SerializeInteger(1, false)
+		set(key, "-1")
+		return s.SerializeInteger(-1)
 	}
 	str, ok := v.value.(string)
 	if !ok {
 		return s.SerializeSimpleError("err", "value is not an integer")
 	}
-	i , err := strconv.Atoi(str)
+	i, err := strconv.Atoi(str)
 	if err != nil {
 		return s.SerializeSimpleError("err", "value is not an integer or out of range")
 	}
 	i--
 	v.value = strconv.Itoa(i)
 	store[key] = v
-	if i < 0 {
-		return s.SerializeInteger(i, false)
-	}
-	return s.SerializeInteger(i, true)
+	return s.SerializeInteger(i)
 }
 
 func lpush(key string, elements ...string) string {
 	v, ok := store[key]
 	if !ok {
-		reverse(elements)
+		cp := make([]string, len(elements))
+		copy(cp, elements)
+		reverse(cp)
 		var t time.Time
 		exp := Expiry{option: NONE, time: t}
-		value := Value{expiry: exp, value: elements}
+		value := Value{expiry: exp, value: cp}
 		store[key] = value
-		return s.SerializeInteger(len(value.value.([]string)), true)
+		return s.SerializeInteger(len(cp))
 	}
 	initial, ok := v.value.([]string)
 	if !ok {
-		return s.SerializeSimpleError("err", "value stored at key is not a list")
+		return s.SerializeSimpleError("WRONGTYPE", "value stored at key is not a list")
 	}
-	val := append(elements, initial...)
+	// Reverse incoming elements so LPUSH list a b c → [c,b,a,...] (same as pushing one at a time)
+	cp := make([]string, len(elements))
+	copy(cp, elements)
+	reverse(cp)
+	val := append(cp, initial...)
 	v.value = val
 	store[key] = v
-	return s.SerializeInteger(len(v.value.([]string)), true)
+	return s.SerializeInteger(len(val))
 }
 
 func rpush(key string, elements ...string) string {
@@ -158,16 +161,16 @@ func rpush(key string, elements ...string) string {
 		exp := Expiry{option: NONE, time: t}
 		value := Value{expiry: exp, value: elements}
 		store[key] = value
-		return s.SerializeInteger(len(value.value.([]string)), true)
+		return s.SerializeInteger(len(elements))
 	}
 	initial, ok := v.value.([]string)
 	if !ok {
-		return s.SerializeSimpleError("err", "value stored at key is not a list")
+		return s.SerializeSimpleError("WRONGTYPE", "value stored at key is not a list")
 	}
 	initial = append(initial, elements...)
 	v.value = initial
 	store[key] = v
-	return s.SerializeInteger(len(v.value.([]string)), true)
+	return s.SerializeInteger(len(initial))
 }
 
 func lrange(key string, start string, stop string) string {
@@ -177,7 +180,7 @@ func lrange(key string, start string, stop string) string {
 	}
 	v, ok := val.value.([]string)
 	if !ok {
-		return s.SerializeSimpleError("err", "value stored at key is not a list")
+		return s.SerializeSimpleError("WRONGTYPE", "value stored at key is not a list")
 	}
 
 	begin, err := strconv.Atoi(start)
@@ -189,11 +192,25 @@ func lrange(key string, start string, stop string) string {
 		return s.SerializeSimpleError("err", "invalid end index specified")
 	}
 
-	var itemBuffer []string
-	if end < 0 {
-		end = len(v) + end
+	n := len(v)
+	if begin < 0 {
+		begin = n + begin
+		if begin < 0 {
+			begin = 0
+		}
 	}
-	for i, j := begin, end; i <= j; i++ {
+	if end < 0 {
+		end = n + end
+	}
+	if begin > end || begin >= n {
+		return s.SerializeArray()
+	}
+	if end >= n {
+		end = n - 1
+	}
+
+	var itemBuffer []string
+	for i := begin; i <= end; i++ {
 		itemBuffer = append(itemBuffer, v[i])
 	}
 	return s.SerializeArray(itemBuffer...)

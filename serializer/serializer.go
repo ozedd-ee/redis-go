@@ -9,11 +9,11 @@ import (
 const CRLF = "\r\n"
 
 type doubleOpts struct {
-	isNegative     bool // true for -, false for +
+	isNegative     bool
 	integer        int
 	fraction       int
 	hasPosExponent bool
-	hasNegExponent bool // Has negative exponent
+	hasNegExponent bool
 	exponent       int
 }
 
@@ -30,14 +30,8 @@ func (s *Serializer) SerializeSimpleError(prefix string, msg string) string {
 	return err
 }
 
-// v: integer value
-// isPos: (true for +, false for -)
-func (s *Serializer) SerializeInteger(v int, isPos bool) string {
-	if isPos {
-		return ":" + fmt.Sprint(v) + CRLF
-	} else {
-		return ":" + "-" + fmt.Sprint(v) + CRLF
-	}
+func (s *Serializer) SerializeInteger(v int) string {
+	return ":" + strconv.Itoa(v) + CRLF
 }
 
 func (s *Serializer) SerializeBulkString(msg string) string {
