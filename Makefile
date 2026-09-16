@@ -5,7 +5,7 @@ BINARY=redis-go
 DOCKER_IMAGE=redis-go-server
 DOCKER_CONTAINER=redis-go-container
 
-.PHONY: all build run restart test bench cover lint fmt clean docker-build docker-run docker-stop
+.PHONY: all build run restart test bench cover lint fmt clean docker-build docker-run docker-stop bench-compare bench-characterize
 
 # Compile Go binary
 build:
@@ -38,3 +38,12 @@ docker-run:
 # Stop Docker container
 docker-stop:
 	-docker stop $(DOCKER_CONTAINER)
+
+# Run throughput/latency/resource comparison against real Redis (requires Docker)
+# Results saved under benchmark/results/<timestamp>/
+bench-compare:
+	@bash benchmark/run.sh
+
+# Systematic characterization sweep: concurrency × payload for SET/GET
+bench-characterize:
+	@bash benchmark/characterize.sh
